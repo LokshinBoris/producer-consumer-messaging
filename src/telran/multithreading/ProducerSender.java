@@ -9,21 +9,25 @@ public class ProducerSender extends Thread {
 	//two message boxes
 	//even messages should be put to even message box
 	//odd messages should be put to odd message box
-	private BlockingQueue<String> messageBox;
+	BlockingQueue<String>[] messageBoxes;
 	private int nMessages;
-	public ProducerSender(BlockingQueue<String> messageBox, int nMessages) {
-		this.messageBox = messageBox;
+
+	public ProducerSender(BlockingQueue<String>[] messageBoxes, int nMessages) {
+		this.messageBoxes = messageBoxes;
 		this.nMessages = nMessages;
 	}
-	public void run() {
-		IntStream.rangeClosed(1, nMessages)
-		.mapToObj(i -> "message" + i).forEach(m -> {
+	public void run()
+	{
+		for(int i=1;i<=nMessages;i++)
+		{
+			String str="message" + i;
 			try {
-				messageBox.put(m);
+				messageBoxes[i%2].put(str);
 			} catch (InterruptedException e) {
 				//no interrupt logics
 			}
-		});
+			
+		}
 	}
 	
 }

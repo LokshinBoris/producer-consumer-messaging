@@ -16,20 +16,29 @@ public class SenderReceiverAppl {
 	private static final int N_RECEIVERS = 10;
 
 	public static void main(String[] args) throws InterruptedException {
-		BlockingQueue<String> messageBox = new LinkedBlockingQueue<String>();
-		ProducerSender sender = startSender(messageBox, N_MESSAGES);
-		ConsumerReceiver[] receivers = startReceivers(messageBox, N_RECEIVERS);
+		BlockingQueue<String> messageBox1 = new LinkedBlockingQueue<String>();
+		BlockingQueue<String> messageBox2 = new LinkedBlockingQueue<String>();
+		@SuppressWarnings("unchecked")
+		BlockingQueue<String>[] messageBoxes = new BlockingQueue[] {messageBox1,messageBox2};
+		
+		ProducerSender sender = startSender(messageBoxes, N_MESSAGES);
+		ConsumerReceiver[] receivers = startReceivers(messageBoxes, N_RECEIVERS);
 		sender.join();
 		stopReceivers(receivers);
-		displayResult();
+		displayResult(receivers);
 		
 		
 
 	}
 
-	private static void displayResult() {
+	private static void displayResult(ConsumerReceiver[] receivers)
+	{
 		System.out.printf("counter of processed messsages is %d\n",
 				ConsumerReceiver.getMessagesCounter());
+		for(int i=0;i<receivers.length;i++)
+		{
+			System.out.printf("%s ... %d\n", receivers[i].getName(),receivers[i].getLocalCounter());
+		}
 		
 	}
 
@@ -41,21 +50,28 @@ public class SenderReceiverAppl {
 		
 	}
 
-	private static ConsumerReceiver[] startReceivers(BlockingQueue<String> messageBox,
+	private static ConsumerReceiver[] startReceivers(BlockingQueue<String>[] messageBoxes,
 			int nReceivers) {
 		ConsumerReceiver[] receivers = 
 		IntStream.range(0, nReceivers).mapToObj(i -> {
 			ConsumerReceiver receiver = new ConsumerReceiver();
-			receiver.setMessageBox(messageBox);
+			int index=getOddEvenIndex(receiver.getName());
+			receiver.setMessageBox(messageBoxes[index]);
 			return receiver;
 		}).toArray(ConsumerReceiver[]::new);
 		Arrays.stream(receivers).forEach(ConsumerReceiver::start);
 		return receivers;
 	}
 
-	private static ProducerSender startSender(BlockingQueue<String> messageBox,
+	private static int getOddEvenIndex(String name)
+	{
+		String str=String.valueOf(name.charAt(name.length()-1));
+		return Integer.parseInt(str)%2;
+	}
+
+	private static ProducerSender startSender(BlockingQueue<String>[] messageBoxes,
 			int nMessages) {
-		ProducerSender sender = new ProducerSender(messageBox, nMessages);
+		ProducerSender sender = new ProducerSender(messageBoxes, nMessages);
 		sender.start();
 		return sender;
 	}
